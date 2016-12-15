@@ -1,0 +1,113 @@
+var babelify    = require('babelify'),
+    browserify  = require('browserify'),
+    browserSync = require('browser-sync').create(),
+    buffer      = require('vinyl-buffer'),
+    concat      = require('gulp-concat'),
+    cssmin      = require('gulp-cssmin'),
+    del         = require('del'),
+    gulp        = require('gulp'),
+    rename      = require('gulp-rename'),
+    source      = require('vinyl-source-stream'),
+    sourcemaps  = require('gulp-sourcemaps'),
+    uglify      = require('gulp-uglify'),
+    watchify    = require('watchify');
+
+function scripts(watch) {
+  var bundler, rebundle;
+  bundler = browserify('./src/js/main.js', {
+    basedir: __dirname, 
+    debug: true, 
+    cache: {}, // required for watchify
+    packageCache: {}, // required for watchify
+    fullPaths: watch // required to be true only for watchify
+  });
+  if(watch) {
+    bundler = watchify(bundler);
+  }
+
+  bundler.transform(babelify, { presets: ['es2015'] });
+
+  rebundle = function() {
+    //console.log('rebundling');
+    var stream = bundler.bundle();
+    //stream.on('error', handleError('Browserify'));
+    stream.on('error', function() {
+      console.error('error');
+    })
+    stream = stream.pipe(source('app.js'))
+                   .pipe(buffer())
+                   .pipe(sourcemaps.init({loadMaps: true}))
+                   .pipe(sourcemaps.write('.'))
+                   .pipe(gulp.dest('./public/js'))
+                   .pipe(browserSync.reload({ stream: true }));
+    //stream.on('end', function() { console.log('done'); });
+    return stream;
+  };
+
+  bundler.on('update', rebundle);
+  return rebundle();
+}
+
+gulp.task('js', function() {
+  return scripts(false);
+});
+
+gulp.task('watch-js', function() {
+  return scripts(true);
+});
+
+gulp.task('clean', function() {
+  del.sync('./public/**/*');
+});
+
+gulp.task('html', function() {
+  return gulp.src('./src/index.html')
+             .pipe(gulp.dest('./public'));
+});
+
+gulp.task('watch-html', function() {
+  gulp.watch('./src/**/*.html', ['html', 'refresh']);
+});
+
+gulp.task('css', function() {
+  return gulp.src([
+          './node_modules/purecss/build/pure.css',
+          './node_modules/font-awesome/css/font-awesome.css',
+          './src/css/**/*'
+         ])
+        .pipe(sourcemaps.init({loadMaps: true}))
+        .pipe(concat("style.min.css"))
+        .pipe(cssmin())
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('./public/css'));
+});
+
+gulp.task('watch-css', function() {
+  gulp.watch('./src/css/**/*', ['css', 'refresh']);
+});
+
+gulp.task('fonts', function() {
+  return gulp.src([
+      './src/fonts/**/*',
+      './node_modules/font-awesome/fonts/**/*'
+    ])
+    .pipe(gulp.dest('./public/fonts'));
+});
+
+gulp.task('build', ['html', 'js', 'css', 'fonts']);
+
+gulp.task('watch', ['watch-html', 'watch-css', 'watch-js']);
+
+gulp.task('serve', ['build'], function() {
+  return browserSync.init({ 
+    server:  { 
+      baseDir: './public' 
+    },
+    injectChanges: false,
+    delay: 50
+  });
+});
+
+gulp.task('refresh', browserSync.reload);
+
+gulp.task('default', ['watch', 'serve']);
