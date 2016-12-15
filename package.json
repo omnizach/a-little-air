@@ -1,8 +1,9 @@
 {
-  "name": "co2",
+  "name": "a-little-air",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A visualization of air",
+  "main": "",
+  "repository": "https://github.com/omnizach/a-little-air",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
