@@ -8,7 +8,7 @@ var d3                = require('d3'),
     tileMesh          = require('./tile-mesh.js'),
     waffle            = require('./waffle.js');
 
-var tl = new gsap.TimelineMax({ paused: true, autoCSS: false }),
+var tl = new gsap.TimelineMax({ useFrames: true, paused: true, autoCSS: false }),
     tlc = timelineControl.gsapTimelineControl(tl)
                          .screen(d3.select('#screen')),
     scene = pixelPerfectScene(d3.select('#screen').node()),
@@ -61,22 +61,24 @@ ch.shuffle(
           tm.tiles[tm.tiles.length-1].color = gasColor(gas(i));
         });
 
-tl.staggerFrom(tm.tiles.filter(gasFilter('n')),   2, { x:-200, y:300, width:0, height:0, }, 0.0005);
-tl.staggerTo(tm.tiles.filter(gasFilter('n')), 2, { 
-  colorProps: { color: 0x404040, format:'number' }
-}, 0.0002, '-=2.0');
+tl.staggerFrom(tm.tiles.filter(gasFilter('n')), 120, { x:-200, y:300, width:0, height:0, }, 0.01);
 
-tl.staggerFrom(tm.tiles.filter(gasFilter('o')),   2, { x:-200, y:300, width:0, height:0 }, 0.001,   '+=0.5');
-tl.to(tm.tiles.filter(gasFilter('o')), 2, { 
+tl.staggerTo(tm.tiles.filter(gasFilter('n')), 30, { 
   colorProps: { color: 0x404040, format:'number' }
-}, '-=0.5');
+}, 0.01, '-=30');
 
-tl.staggerFrom(tm.tiles.filter(gasFilter('ar')),  1, { x:-200, y:300, width:0, height:0 }, 0.01,    '+=0.5');
-tl.to(tm.tiles.filter(gasFilter('ar')), 2, { 
+tl.staggerFrom(tm.tiles.filter(gasFilter('o')), 120, { x:-200, y:300, width:0, height:0 }, 0.1, '+=20');
+
+tl.to(tm.tiles.filter(gasFilter('o')), 30, { 
   colorProps: { color: 0x404040, format:'number' }
-}, '-=0.5');
+}, '-=30');
 
-tl.staggerFrom(tm.tiles.filter(gasFilter('co2')), 1, { x:-200, y:300, width:0, height:0 }, 0.5,     '+=0.5');
+tl.staggerFrom(tm.tiles.filter(gasFilter('ar')), 120, { x:-200, y:300, width:0, height:0 }, 1, '+=20');
+tl.to(tm.tiles.filter(gasFilter('ar')), 30, { 
+  colorProps: { color: 0x404040, format:'number' }
+}, '-=30');
+
+tl.staggerFrom(tm.tiles.filter(gasFilter('co2')), 120, { x:-200, y:300, width:0, height:0 }, 30, '+=20');
 
 tlc.updateFromGsapTimeline(false);   
 

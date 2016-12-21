@@ -1,6 +1,9 @@
 .storyboard {
   margin: 0px;
   padding: 0px;
+  overflow: hidden;
+  width: 1280px;
+  position:relative;
 }
 
 .storyboard .controls {
@@ -14,7 +17,7 @@
 }
 
 .storyboard .controls .time-label {
-  font-size: 20px;
+  font-size: 12px;
   font-family: monospace;
   text-anchor: left;
   fill: #666;
@@ -66,8 +69,6 @@
 }
 
 .storyboard .position {
-  stroke: #f00;
-  stroke-width: 2px;
   fill: #f00;
   fill-opacity: 0.5;
   cursor: col-resize;

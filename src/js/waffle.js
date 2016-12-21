@@ -1,14 +1,12 @@
 
-function rangify(value, def) {
-  return value === null ? def : Array.isArray(value) ? value : [+value, +value];
-}
+var u = require('./util.js');
 
 function waffle(data, settings) {
   settings = settings || {};
 
-  var cellSize = rangify(settings.cellSize, [1,1]),
-      padding = rangify(settings.padding, [0, 0]),
-      segment = rangify(settings.segment, [10, 10]),
+  var cellSize = u.rangify(settings.cellSize, [1,1]),
+      padding = u.rangify(settings.padding, [0, 0]),
+      segment = u.rangify(settings.segment, [10, 10]),
       width = settings.width || Infinity;
 
   var sc = segment[0] * segment[1], // cells per segment

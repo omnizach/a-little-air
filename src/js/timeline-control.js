@@ -1,6 +1,7 @@
 
 var _   = require('lodash'),
-    d3  = require('d3');
+    d3  = require('d3'),
+    u   = require('./util.js');
 
 function tweenInfo(tw, baseStartTime) {
   baseStartTime = baseStartTime || 0;
@@ -58,10 +59,10 @@ function timelineControl() {
   const TEMPLATE = `
       <svg class="controls">
         <rect class="background" x="0" y="0" width="100%" height="100%" />
-        <g class="time-label" transform="translate(5,25)">
+        <g class="time-label" transform="translate(5,15)">
           <text></text>
         </g>
-        <g transform="translate(0,30)">
+        <g transform="translate(0,20)">
           <g class="button play-btn">
             <text class="fa">\uf04b</text>
           </g>
@@ -107,8 +108,7 @@ function timelineControl() {
               </g>
             </g>
             <g class="position">
-              <path d="M0,12 l-11,-11 h22 z" />
-              <line x1="0" y1="12" x2="0" y2="100%" />
+              <rect x="0" y="0" width="2" height="100%" />
             </g>
           </g>
         </svg>
@@ -118,8 +118,6 @@ function timelineControl() {
   var root,
       controls,
       timeline,
-      timelineWidth = 100,
-      timelineHeight = 100,
       scrollDiv = 0,
       positionBounds = [0,1],
       callbacks = {
@@ -142,13 +140,17 @@ function timelineControl() {
       bookmarkTime = 0,
       labels = [],
       tweens = [],
-      screen;
+      screen,
+      size = [1000, 100];
 
   var timeFormat = function(pos) {
-    var m = String(Math.floor(pos / 60)),
-        s = Math.floor(pos % 60),
-        t = Math.floor((pos % 1) * 10);
-    return m + ':' + (s < 10 ? '0' : '') + s + '.' + t;
+    //return String(Math.trunc(pos));
+    var f = Math.floor(pos % 60),
+        lzf = f < 10 ? '0' : '',
+        s = Math.floor(pos / 60),
+        lzs = s < 10 ? '0' : '',
+        m = Math.floor(pos / 60 / 60);
+    return `${m}:${lzs}${s}:${lzf}${f}`;
   };
 
   var raiseEvent = function(event) {
@@ -239,7 +241,7 @@ function timelineControl() {
     assignLanes();
 
     var laneCount = d3.max(tweens.map(function(d) { return d.lane; }))+1,
-        laneHeight = (timelineHeight-30) / laneCount;
+        laneHeight = (size[1]-30) / laneCount;
 
     timeline.select('.tweens').selectAll('.tween')
             .data(tweens)
@@ -307,20 +309,33 @@ function timelineControl() {
     }
 
     timeScale.domain([0, duration])
-             .range([0, timelineWidth * zoom])
-             .nice();
+             .rangeRound([0, duration * zoom]);
 
-    timeline.attr('width', timeScale.range()[1]+1)
-            .attr('height', timelineHeight);
+    timeline.attr('width', timeScale.range()[1]+50)
+            .attr('height', size[1]);
+
+    var tickSteps = [1, 2, 5, 10, 15, 30, 
+                     60*1, 60*2, 60*5, 60*10, 60*15, 60*30, 
+                     60*60*1, 60*60*2, 60*60*5, 60*60*10], //tick step up to 10 minutes
+        tickStepActual = timeScale.invert(100), // what is the value at about 100px?
+        tickStep = 1;
+    for (var i = 0; tickSteps[i] < tickStepActual; i++) {
+      tickStep = tickSteps[i];
+    }
 
     timeline.select('.time-axis')
-            .call(d3.axisTop(timeScale).ticks(10)
-                    .ticks(20 * zoom)
+            .call(d3.axisTop(timeScale)
                     .tickSize(12)
-                    .tickFormat(timeFormat))
+                    .tickFormat(timeFormat)
+                    .tickValues(d3.range(0, duration, tickStep))
+                    .tickSizeOuter(0)
+            )
             .selectAll('text')
             .attr('dx', 3)
             .attr('dy', 12);
+
+    timeline.select('.position rect')
+            .attr('width', Math.max(zoom, 2));
 
     updateLabels();
 
@@ -348,8 +363,8 @@ function timelineControl() {
       scrollDiv.node().scrollLeft = timeScale(position) - 200;
     } 
 
-    if (timeScale(position) > scrollDiv.node().scrollLeft + timelineWidth - 200) {
-      scrollDiv.node().scrollLeft = timeScale(position) - timelineWidth + 200;
+    if (timeScale(position) > scrollDiv.node().scrollLeft + size[0] - 200) {
+      scrollDiv.node().scrollLeft = timeScale(position) - size[0] + 200;
     }
 
     controls.select('.time-label text')
@@ -382,6 +397,11 @@ function timelineControl() {
                  .append('div')
                  .attr('class', 'storyboard')
                  .html(TEMPLATE);
+
+        size = [
+          root.style('width').replace('px',''), 
+          100 //root.style('height').replace('px', '')
+        ];
 
         controls = root.select('svg.controls');
         timeline = root.select('svg.timeline-graphic');
@@ -456,7 +476,7 @@ function timelineControl() {
                           my.pause();
                         })
                         .on('drag', function() {
-                          position = timeScale.invert(d3.event.x);
+                          position = Math.round(timeScale.invert(d3.event.x));
                           updatePosition();
                         }));
 
@@ -466,25 +486,20 @@ function timelineControl() {
                 });
       }
 
-      var containerSize = root.node().getBoundingClientRect();
+      controls.attr('width', size[1])
+              .attr('height', size[1]);
 
-      timelineWidth = containerSize.width - containerSize.height*0.75 - 1;
-      timelineHeight = containerSize.height;
-
-      controls.attr('width', containerSize.height*0.75)
-              .attr('height', containerSize.height);
-
-      var btnSize = (containerSize.height - 30) / 4;
+      var btnSize = (size[1] - 20) / 4;
       controls.selectAll('.button')
               .attr('transform', function(d, i) { 
                 return 'translate(' + ((i%2)*btnSize+btnSize*0.1) + ',' + (Math.floor(i/2)*btnSize+btnSize*0.75) + ')';
               })
               .style('font-size', String(btnSize*0.75) + 'px');
 
-      speedScale.range([0, containerSize.height-20]);
+      speedScale.range([0, size[1]-20]);
 
       controls.select('.speed-slider')
-              .attr('transform', 'translate(' + (btnSize*2.5) + ',10)');
+              .attr('transform', 'translate(' + (btnSize*3.5) + ',10)');
 
       controls.select('.speed-slider .axis')
               .call(d3.axisRight(speedScale)
@@ -496,6 +511,13 @@ function timelineControl() {
       updateTimeline();
     });
   };
+
+  my.size = function(_) {
+    if (!arguments.length) return size;
+    size = u.rangify(_, [1000, 100]);
+    updateTimeline();
+    return my;
+  }
 
   my.duration = function(_) {
     if (!arguments.length) return duration;
