@@ -92,7 +92,7 @@ gulp.task('css', function() {
   return gulp.src(config.css)
              .pipe(sourcemaps.init({loadMaps: true}))
              .pipe(concat("style.min.css"))
-             .pipe(cssmin())
+             //.pipe(cssmin())
              .pipe(sourcemaps.write('.'))
              .pipe(gulp.dest('./public/css'));
 });
