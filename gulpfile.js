@@ -12,9 +12,22 @@ var babelify    = require('babelify'),
     uglify      = require('gulp-uglify'),
     watchify    = require('watchify');
 
+var config = {
+  css: [
+    './node_modules/purecss/build/pure.css',
+    './node_modules/font-awesome/css/font-awesome.css',
+    './src/css/**/*'
+  ],
+  js: './src/js/main.js'
+};
+
+gulp.task('clean', function() {
+  del.sync('./public/**/*');
+});
+
 function scripts(watch) {
   var bundler, rebundle;
-  bundler = browserify('./src/js/main.js', {
+  bundler = browserify(config.js, {
     basedir: __dirname, 
     debug: true, 
     cache: {}, // required for watchify
@@ -52,12 +65,18 @@ gulp.task('js', function() {
   return scripts(false);
 });
 
-gulp.task('watch-js', function() {
-  return scripts(true);
+gulp.task('js-prod', ['clean'], function() {
+  return browserify(config.js)
+          .transform(babelify, { presets: ['es2015'] })
+          .bundle()
+          .pipe(source('app.min.js'))
+          .pipe(buffer())
+          .pipe(uglify().on('error', console.log))
+          .pipe(gulp.dest('./public/js'));
 });
 
-gulp.task('clean', function() {
-  del.sync('./public/**/*');
+gulp.task('watch-js', function() {
+  return scripts(true);
 });
 
 gulp.task('html', function() {
@@ -70,17 +89,20 @@ gulp.task('watch-html', function() {
 });
 
 gulp.task('css', function() {
-  return gulp.src([
-          './node_modules/purecss/build/pure.css',
-          './node_modules/font-awesome/css/font-awesome.css',
-          './src/css/**/*'
-         ])
-        .pipe(sourcemaps.init({loadMaps: true}))
-        .pipe(concat("style.min.css"))
-        .pipe(cssmin())
-        .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest('./public/css'));
+  return gulp.src(config.css)
+             .pipe(sourcemaps.init({loadMaps: true}))
+             .pipe(concat("style.min.css"))
+             .pipe(cssmin())
+             .pipe(sourcemaps.write('.'))
+             .pipe(gulp.dest('./public/css'));
 });
+
+gulp.task('css-prod', ['clean'], function() {
+  return gulp.src(config.css)
+             .pipe(concat('style.min.css'))
+             .pipe(cssmin())
+             .pipe(gulp.dest('./public/css'));
+})
 
 gulp.task('watch-css', function() {
   gulp.watch('./src/css/**/*', ['css', 'refresh']);
@@ -111,3 +133,5 @@ gulp.task('serve', ['build'], function() {
 gulp.task('refresh', browserSync.reload);
 
 gulp.task('default', ['watch', 'serve']);
+
+gulp.task('build-prod', ['js-prod', 'css-prod', 'html', 'fonts']);
