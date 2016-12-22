@@ -132,7 +132,7 @@ function timelineControl() {
       position = 0,
       timeScale = d3.scaleLinear()
                     .clamp(true),
-      zoom = 1,
+      zoom = 0,
       logSpeed = 0,
       speedScale = d3.scaleLinear()
                      .domain([2, -2])
@@ -141,7 +141,11 @@ function timelineControl() {
       labels = [],
       tweens = [],
       screen,
-      size = [1000, 100];
+      size = [1000, 100],
+      zoomLevels = [1, 2, 5, 10, 15, 30, 
+                    60*1, 60*2, 60*5, 60*10, 60*15, 60*30, 
+                    60*60*1, 60*60*2, 60*60*5, 60*60*10],
+      timelineSegementSize = 60;
 
   var timeFormat = function(pos) {
     //return String(Math.trunc(pos));
@@ -309,7 +313,7 @@ function timelineControl() {
     }
 
     timeScale.domain([0, duration])
-             .rangeRound([0, duration * zoom]);
+             .rangeRound([0, duration * timelineSegementSize / zoomLevels[zoom]]);
 
     timeline.attr('width', timeScale.range()[1]+50)
             .attr('height', size[1]);
@@ -335,7 +339,7 @@ function timelineControl() {
             .attr('dy', 12);
 
     timeline.select('.position rect')
-            .attr('width', Math.max(zoom, 2));
+            .attr('width', Math.max(timelineSegementSize / zoomLevels[zoom], 2));
 
     updateLabels();
 
@@ -432,16 +436,10 @@ function timelineControl() {
                 });
 
         controls.select('.zoom-in-btn')
-                .on('click', function() {
-                  my.zoom(my.zoom() * 2);
-                });
+                .on('click', my.zoomIn);
 
         controls.select('.zoom-out-btn')
-                .on('click', function() {
-                  if (my.zoom() > 1) {
-                    my.zoom(my.zoom() / 2);
-                  }
-                });
+                .on('click', my.zoomOut);
 
         controls.select('.unselect-btn')
                 .on('click', function() {
@@ -486,7 +484,7 @@ function timelineControl() {
                 });
       }
 
-      controls.attr('width', size[1])
+      controls.attr('width', size[1]) // not a typo, the controls area is square
               .attr('height', size[1]);
 
       var btnSize = (size[1] - 20) / 4;
@@ -523,13 +521,6 @@ function timelineControl() {
     if (!arguments.length) return duration;
     duration = +_;
     bookmarkTime = Math.min(duration, bookmarkTime);
-    updateTimeline();
-    return my;
-  };
-
-  my.zoom = function(_) {
-    if (!arguments.length) return zoom;
-    zoom = +_;
     updateTimeline();
     return my;
   };
@@ -621,6 +612,20 @@ function timelineControl() {
 
     position = time;
     updatePosition(false, true);
+
+    return my;
+  };
+
+  my.zoomIn = function() {
+    zoom = Math.max(zoom-1, 0);
+    updateTimeline();
+
+    return my;
+  };
+
+  my.zoomOut = function() {
+    zoom = Math.min(zoom+1, zoomLevels.length-1);
+    updateTimeline();
 
     return my;
   };
