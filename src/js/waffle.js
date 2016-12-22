@@ -2,6 +2,10 @@
 var u = require('./util.js');
 
 function waffle(data, settings) {
+  if (typeof data === 'number') {
+    data = Array.apply(null, Array(data)).map(function() { return {}; });
+  }
+
   settings = settings || {};
 
   var cellSize = u.rangify(settings.cellSize, [1,1]),
