@@ -132,7 +132,7 @@ function timelineControl() {
       position = 0,
       timeScale = d3.scaleLinear()
                     .clamp(true),
-      zoom = 0,
+      zoom = 4,
       logSpeed = 0,
       speedScale = d3.scaleLinear()
                      .domain([2, -2])

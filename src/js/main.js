@@ -51,7 +51,7 @@ tm.updateMatrixWorld();
 scene.add(tm);
 
 ch.shuffle(
-  waffle(d3.range(100*100).map(function() { return {}; }), {
+  waffle(100*100, {
           cellSize: [5, 5],
           padding: 1,
           segment: 10,
