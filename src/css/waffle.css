@@ -1,0 +1,19 @@
+.block {
+/*shape-rendering: crispEdges;*/
+}
+
+.gas-n {
+  fill: hsl(200, 100%, 75%);
+}
+
+.gas-o {
+  fill: hsl(0, 100%, 75%);
+}
+
+.gas-ar {
+  fill: hsl(260, 100%, 75%);
+}
+
+.gas-co2 {
+  fill: hsl(0, 0%, 50%);
+}
